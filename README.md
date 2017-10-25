@@ -1,2 +1,2 @@
-# ir-user
-IglooRental user component.
+# ir-property
+IglooRental property component.
