@@ -28,10 +28,21 @@
             <version>${kumuluzee.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.kumuluz.ee</groupId>
+            <artifactId>kumuluzee-cdi-weld</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.kumuluz.ee.config</groupId>
+            <artifactId>kumuluzee-config-etcd</artifactId>
+            <version>${kumuluzee-config.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>4.5.3</version>
         </dependency>
+
         <dependency>
             <groupId>si.uni-lj.fri.rso.igloorental</groupId>
             <artifactId>ir-property-catalogue</artifactId>
@@ -75,5 +86,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <kumuluzee.version>2.5.0-SNAPSHOT</kumuluzee.version>
+        <kumuluzee-config.version>1.1.0-SNAPSHOT</kumuluzee-config.version>
     </properties>
 </project>
