@@ -107,10 +107,12 @@
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.8.10" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.8.10" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.module:jackson-module-afterburner:2.8.10" level="project" />
+    <orderEntry type="library" name="Maven: com.kumuluz.ee.discovery:kumuluzee-discovery-etcd:1.1.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="Maven: com.kumuluz.ee.discovery:kumuluzee-discovery-common:1.1.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="Maven: com.vdurmont:semver4j:2.0.2" level="project" />
     <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpclient:4.5.3" level="project" />
     <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpcore:4.4.6" level="project" />
     <orderEntry type="library" name="Maven: commons-logging:commons-logging:1.2" level="project" />
     <orderEntry type="library" name="Maven: commons-codec:commons-codec:1.9" level="project" />
-    <orderEntry type="module" module-name="ir-property-catalogue" />
   </component>
 </module>

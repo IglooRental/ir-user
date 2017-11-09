@@ -1,6 +1,6 @@
 package si.uni_lj.fri.rso.ir_user.models;
 
-import si.uni_lj.fri.rso.ir_property.models.Property;
+import si.uni_lj.fri.rso.ir_user.models.dependencies.Property;
 
 import java.util.List;
 

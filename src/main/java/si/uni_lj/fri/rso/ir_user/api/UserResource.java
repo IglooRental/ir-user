@@ -20,6 +20,9 @@ public class UserResource {
     @Inject
     private Config config;
 
+    @Inject
+    private UserDatabase userDatabase;
+
     @GET
     @Path("/config")
     public Response config() {
@@ -34,7 +37,7 @@ public class UserResource {
     @GET
     public Response getAllUsers() {
         if (ConfigurationUtil.getInstance().getBoolean("rest-config.endpoint-enabled").orElse(false)) {
-            List<User> users = UserDatabase.getUsers();
+            List<User> users = userDatabase.getUsers();
             return Response.ok(users).build();
         } else {
             return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity("{\"reason\": \"Endpoint disabled.\"}").build();
@@ -45,7 +48,7 @@ public class UserResource {
     @Path("/{userId}")
     public Response getUser(@PathParam("userId") String userId) {
         if (ConfigurationUtil.getInstance().getBoolean("rest-config.endpoint-enabled").orElse(false)) {
-            User user = UserDatabase.getUser(userId);
+            User user = userDatabase.getUser(userId);
             return user != null
                     ? Response.ok(user).build()
                     : Response.status(Response.Status.NOT_FOUND).build();
@@ -57,7 +60,7 @@ public class UserResource {
     @POST
     public Response addNewUser(User user) {
         if (ConfigurationUtil.getInstance().getBoolean("rest-config.endpoint-enabled").orElse(false)) {
-            UserDatabase.addUser(user);
+            userDatabase.addUser(user);
             return Response.noContent().build();
         } else {
             return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity("{\"reason\": \"Endpoint disabled.\"}").build();
@@ -68,7 +71,7 @@ public class UserResource {
     @Path("/{userId}")
     public Response deleteUser(@PathParam("userId") String userId) {
         if (ConfigurationUtil.getInstance().getBoolean("rest-config.endpoint-enabled").orElse(false)) {
-            UserDatabase.deleteUser(userId);
+            userDatabase.deleteUser(userId);
             return Response.noContent().build();
         } else {
             return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity("{\"reason\": \"Endpoint disabled.\"}").build();
