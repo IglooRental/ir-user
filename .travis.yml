@@ -18,5 +18,5 @@ script:
 - docker build -t jm5619/ir-user .
 
 after_success:
-- docker login -u '$DOCKER_USERNAME' -p '$DOCKER_PASSWORD'
+- docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
 - docker push jm5619/ir-user
