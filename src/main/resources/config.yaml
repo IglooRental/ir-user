@@ -15,6 +15,23 @@ kumuluzee:
   discovery:
     etcd:
       hosts: http://localhost:2379
+  health:
+    checks:
+      disk-space-health-check:
+        threshold: 100000000
+#    checks:
+#      data-source-health-check:
+#        jndi-name: jdbc/UsersDS
+  cors-filter:
+    servlet:
+      allow-origin: "*"
+  metrics:
+    web-instrumentation:
+      - name: orders-endpoint
+        url-pattern: /v1/users/*
+
 
 rest-config:
   endpoint-enabled: true
+  healthy: true
+  load-intensity: 45

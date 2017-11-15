@@ -1,7 +1,7 @@
 package si.uni_lj.fri.rso.ir_user.api;
 
 import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
-import si.uni_lj.fri.rso.ir_user.cdi.Config;
+import org.eclipse.microprofile.metrics.annotation.Metered;
 import si.uni_lj.fri.rso.ir_user.cdi.UserDatabase;
 import si.uni_lj.fri.rso.ir_user.models.User;
 
@@ -18,23 +18,10 @@ import java.util.List;
 @Path("users")
 public class UserResource {
     @Inject
-    private Config config;
-
-    @Inject
     private UserDatabase userDatabase;
 
     @GET
-    @Path("/config")
-    public Response config() {
-        String response =
-                "{\n" +
-                "    \"endpointEnabled\": \"%b\"\n" +
-                "}";
-        response = String.format(response, config.getEndpointEnabled());
-        return Response.ok(response).build();
-    }
-
-    @GET
+    @Metered
     public Response getAllUsers() {
         if (ConfigurationUtil.getInstance().getBoolean("rest-config.endpoint-enabled").orElse(false)) {
             List<User> users = userDatabase.getUsers();
@@ -45,6 +32,7 @@ public class UserResource {
     }
 
     @GET
+    @Metered
     @Path("/{userId}")
     public Response getUser(@PathParam("userId") String userId) {
         if (ConfigurationUtil.getInstance().getBoolean("rest-config.endpoint-enabled").orElse(false)) {
@@ -58,6 +46,7 @@ public class UserResource {
     }
 
     @POST
+    @Metered
     public Response addNewUser(User user) {
         if (ConfigurationUtil.getInstance().getBoolean("rest-config.endpoint-enabled").orElse(false)) {
             userDatabase.addUser(user);
@@ -68,6 +57,7 @@ public class UserResource {
     }
 
     @DELETE
+    @Metered
     @Path("/{userId}")
     public Response deleteUser(@PathParam("userId") String userId) {
         if (ConfigurationUtil.getInstance().getBoolean("rest-config.endpoint-enabled").orElse(false)) {
