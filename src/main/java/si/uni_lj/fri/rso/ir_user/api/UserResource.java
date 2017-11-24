@@ -1,6 +1,7 @@
 package si.uni_lj.fri.rso.ir_user.api;
 
 import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
+import com.kumuluz.ee.logs.cdi.Log;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import si.uni_lj.fri.rso.ir_user.cdi.UserDatabase;
 import si.uni_lj.fri.rso.ir_user.models.User;
@@ -11,14 +12,18 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
+import java.util.logging.Logger;
 
 @RequestScoped
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path("users")
+@Log
 public class UserResource {
     @Inject
     private UserDatabase userDatabase;
+
+    private Logger log = Logger.getLogger(UserResource.class.getName());
 
     @GET
     @Metered

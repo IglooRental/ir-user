@@ -1,5 +1,6 @@
 package si.uni_lj.fri.rso.ir_user.api;
 
+import com.kumuluz.ee.logs.cdi.Log;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import si.uni_lj.fri.rso.ir_user.cdi.Config;
 
@@ -8,14 +9,18 @@ import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.logging.Logger;
 
 @RequestScoped
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path("mgmt")
+@Log
 public class ManagementResource {
     @Inject
     private Config config;
+
+    private Logger log = Logger.getLogger(ManagementResource.class.getName());
 
     @GET
     @Metered
@@ -35,6 +40,7 @@ public class ManagementResource {
     @Path("/sethealth")
     public Response setHealth(Boolean health) {
         config.setHealthy(health);
+        log.info(String.format("Manually set health: %b", health));
         return Response.ok().build();
     }
 
@@ -43,6 +49,7 @@ public class ManagementResource {
     @Path("/load")
     public Response loadOrder() {
         long result = fibonacci(config.getLoadIntensity());
+        log.warning(String.format("Loading service with fibonacci: intensity %d", result));
         return Response.status(Response.Status.OK).build();
     }
 
