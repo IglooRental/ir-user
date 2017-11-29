@@ -2,39 +2,45 @@ package si.uni_lj.fri.rso.ir_user.cdi;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kumuluz.ee.discovery.annotations.DiscoverService;
+import com.kumuluz.ee.logs.LogManager;
+import com.kumuluz.ee.logs.Logger;
+import com.kumuluz.ee.rest.beans.QueryParameters;
+import com.kumuluz.ee.rest.utils.JPAUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-import si.uni_lj.fri.rso.ir_user.models.dependencies.Property;
 import si.uni_lj.fri.rso.ir_user.models.User;
+import si.uni_lj.fri.rso.ir_user.models.dependencies.Property;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
 import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @RequestScoped
 public class UserDatabase {
-    // property-catalogue-service is the kumuluzee application name as defined in the yaml file
+    // user-catalogue-service is the kumuluzee application name as defined in the yaml file
     // this also MUST be in a bean (see @requestscoped above) for it to work
     @Inject
     @DiscoverService("property-catalogue-service")
     private String basePath;
 
+    private Logger log = LogManager.getLogger(UserDatabase.class.getName());
+
+    @Inject
+    private EntityManager em;
+
     private HttpClient httpClient = HttpClientBuilder.create().build();
     private ObjectMapper objectMapper = new ObjectMapper();
-
-    private List<User> users = new ArrayList<>(Arrays.asList(
-            new User("0", "User Name 1", "user1@example.com", "password hash very secure"),
-            new User("1", "User Name 2", "user2@example.com", "password hash very secure too"),
-            new User("2", "User Name 2", "user2@example.com", "passwort veri stronk yes yses")
-    ));
 
     private List<Property> getObjects(String json) throws IOException {
         return json == null ? new ArrayList<>() : objectMapper.readValue(json,
@@ -42,20 +48,20 @@ public class UserDatabase {
     }
 
     public List<User> getUsers() {
-        // TODO: use the filtered hibernate thingy
-        return users;
+        TypedQuery<User> query = em.createNamedQuery("User.getAll", User.class);
+        return query.getResultList();
+    }
+
+    public List<User> getUsersFilter(UriInfo uriInfo) {
+        QueryParameters queryParameters = QueryParameters.query(uriInfo.getRequestUri().getQuery()).defaultOffset(0).build();
+        return JPAUtils.queryEntities(em, User.class, queryParameters);
     }
 
     public User getUser(String userId) {
-        User user = null;
-        for (User u : users) {
-            if (u.getId().equals(userId))
-                user = u;
-        }
+        User user = em.find(User.class, userId);
         if (user == null) {
-            return null;
+            throw new NotFoundException();
         }
-
         user.setProperties(getProperties(user.getId()));
         return user;
     }
@@ -83,21 +89,70 @@ public class UserDatabase {
             }
         } else {
             // service not available placeholder
-            System.err.println("base path is null");
+            log.error("base path is null");
         }
         return new ArrayList<>();
     }
 
-    public void addUser(User user) {
-        users.add(user);
+    public User createUser(User user) {
+        try {
+            beginTx();
+            em.persist(user);
+            commitTx();
+        } catch (Exception e) {
+            rollbackTx();
+        }
+
+        return user;
     }
 
-    public void deleteUser(String userId) {
-        for (User user : users) {
-            if (user.getId().equals(userId)) {
-                users.remove(user);
-                break;
+    public User putUser(String userId, User user) {
+        User p = em.find(User.class, userId);
+        if (p == null) {
+            return null;
+        }
+        try {
+            beginTx();
+            user.setId(p.getId());
+            user = em.merge(user);
+            commitTx();
+        } catch (Exception e) {
+            rollbackTx();
+        }
+        return user;
+    }
+
+    public boolean deleteUser(String userId) {
+        User p = em.find(User.class, userId);
+        if (p != null) {
+            try {
+                beginTx();
+                em.remove(p);
+                commitTx();
+            } catch (Exception e) {
+                rollbackTx();
             }
+        } else {
+            return false;
+        }
+        return true;
+    }
+
+    private void beginTx() {
+        if (!em.getTransaction().isActive()) {
+            em.getTransaction().begin();
+        }
+    }
+
+    private void commitTx() {
+        if (em.getTransaction().isActive()) {
+            em.getTransaction().commit();
+        }
+    }
+
+    private void rollbackTx() {
+        if (em.getTransaction().isActive()) {
+            em.getTransaction().rollback();
         }
     }
 }

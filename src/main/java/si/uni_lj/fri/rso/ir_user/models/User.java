@@ -1,14 +1,29 @@
 package si.uni_lj.fri.rso.ir_user.models;
 
+import org.eclipse.persistence.annotations.UuidGenerator;
 import si.uni_lj.fri.rso.ir_user.models.dependencies.Property;
 
+import javax.persistence.*;
 import java.util.List;
 
+@Entity(name = "users")
+@NamedQueries(value = {
+        @NamedQuery(name = "User.getAll", query = "SELECT u FROM users u")
+})
+@UuidGenerator(name = "idGenerator")
 public class User {
+    @Id
+    @GeneratedValue(generator = "idGenerator")
     private String id;
+
     private String name;
+
     private String email;
+
+    @Column(name = "password_hash")
     private String passwordHash;
+
+    @Transient
     private List<Property> properties;
 
     public User() {}

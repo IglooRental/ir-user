@@ -54,7 +54,7 @@ public class UserResource {
     @Metered
     public Response addNewUser(User user) {
         if (ConfigurationUtil.getInstance().getBoolean("rest-config.endpoint-enabled").orElse(false)) {
-            userDatabase.addUser(user);
+            userDatabase.createUser(user);
             return Response.noContent().build();
         } else {
             return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity("{\"reason\": \"Endpoint disabled.\"}").build();
