@@ -69,7 +69,7 @@ public class UserDatabase {
     private List<Property> getProperties(String userId) {
         if (basePath != null) {
             try {
-                HttpGet request = new HttpGet(basePath + "/v1/properties?where=ownerId:EQ:" + userId);
+                HttpGet request = new HttpGet(basePath + "/v1/properties/filtered?where=ownerId:EQ:" + userId);
                 HttpResponse response = httpClient.execute(request);
 
                 int status = response.getStatusLine().getStatusCode();

@@ -9,8 +9,10 @@ import si.uni_lj.fri.rso.ir_user.models.User;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -23,6 +25,9 @@ public class UserResource {
     @Inject
     private UserDatabase userDatabase;
 
+    @Context
+    protected UriInfo uriInfo;
+
     private Logger log = Logger.getLogger(UserResource.class.getName());
 
     @GET
@@ -31,6 +36,17 @@ public class UserResource {
         if (ConfigurationUtil.getInstance().getBoolean("rest-config.endpoint-enabled").orElse(false)) {
             List<User> users = userDatabase.getUsers();
             return Response.ok(users).build();
+        } else {
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity("{\"reason\": \"Endpoint disabled.\"}").build();
+        }
+    }
+
+    @GET
+    @Path("/filtered")
+    public Response getUsersFiltered() {
+        if (ConfigurationUtil.getInstance().getBoolean("rest-config.endpoint-enabled").orElse(false)) {
+            List<User> customers = userDatabase.getUsersFilter(uriInfo);
+            return Response.status(Response.Status.OK).entity(customers).build();
         } else {
             return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity("{\"reason\": \"Endpoint disabled.\"}").build();
         }
