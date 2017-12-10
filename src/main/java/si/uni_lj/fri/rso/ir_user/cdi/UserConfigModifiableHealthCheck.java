@@ -9,16 +9,16 @@ import javax.inject.Inject;
 
 @Health
 @ApplicationScoped
-public class UserHealthCheck implements HealthCheck {
+public class UserConfigModifiableHealthCheck implements HealthCheck {
     @Inject
     private Config config;
 
     @Override
     public HealthCheckResponse call() {
         if (config.getHealthy()) {
-            return HealthCheckResponse.named(UserHealthCheck.class.getSimpleName()).up().build();
+            return HealthCheckResponse.named(UserConfigModifiableHealthCheck.class.getSimpleName()).up().build();
         } else {
-            return HealthCheckResponse.named(UserHealthCheck.class.getSimpleName()).down().build();
+            return HealthCheckResponse.named(UserConfigModifiableHealthCheck.class.getSimpleName()).down().build();
         }
     }
 }
