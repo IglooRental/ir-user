@@ -29,10 +29,10 @@ public class ManagementResource {
     @Metered
     @Path("/info")
     public Response milestoneInformation() {
-        // TODO: enter the ips and ports
-        String ip = "TODO";
-        int userServicePort = 12345;
-        int propertyCatalogueServicePort = 12345;
+        // Careful if restarting services or nodes: IP and ports could (and probably will) change!
+        String ip = "169.51.16.4";
+        int userServicePort = 31278;
+        int propertyCatalogueServicePort = 32160;
 
         String githubBase = "https://github.com/IglooRental/";
         String travisBase = "https://travis-ci.org/IglooRental/";
