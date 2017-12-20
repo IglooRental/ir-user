@@ -32,7 +32,7 @@ kumuluzee:
       allow-origin: "*"
   metrics:
     web-instrumentation:
-      - name: orders-endpoint
+      - name: user-endpoint
         url-pattern: /v1/users/*
   logs:
     config-file: '<?xml version="1.0" encoding="UTF-8"?>
