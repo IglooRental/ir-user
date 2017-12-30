@@ -12,9 +12,13 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
+import org.eclipse.microprofile.faulttolerance.Fallback;
+import org.eclipse.microprofile.faulttolerance.Timeout;
 import si.uni_lj.fri.rso.ir_user.models.User;
 import si.uni_lj.fri.rso.ir_user.models.dependencies.Property;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -28,19 +32,30 @@ import java.util.List;
 
 @RequestScoped
 public class UserDatabase {
+    private Logger log = LogManager.getLogger(UserDatabase.class.getName());
+
+    @Inject
+    private EntityManager em;
+
+    // fault tolerance needs to be run through a CDI bean, so we can't just call this.method(),
+    // instead, we have to inject ourselves
+    @Inject
+    private UserDatabase userDatabase;
+
+    private HttpClient httpClient;
+    private ObjectMapper objectMapper;
+
     // user-catalogue-service is the kumuluzee application name as defined in the yaml file
     // this also MUST be in a bean (see @requestscoped above) for it to work
     @Inject
     @DiscoverService("property-catalogue-service")
     private String basePath;
 
-    private Logger log = LogManager.getLogger(UserDatabase.class.getName());
-
-    @Inject
-    private EntityManager em;
-
-    private HttpClient httpClient = HttpClientBuilder.create().build();
-    private ObjectMapper objectMapper = new ObjectMapper();
+    @PostConstruct
+    private void init() {
+        httpClient = HttpClientBuilder.create().build();
+        objectMapper = new ObjectMapper();
+    }
 
     private List<Property> getObjects(String json) throws IOException {
         return json == null ? new ArrayList<>() : objectMapper.readValue(json,
@@ -55,43 +70,6 @@ public class UserDatabase {
     public List<User> getUsersFilter(UriInfo uriInfo) {
         QueryParameters queryParameters = QueryParameters.query(uriInfo.getRequestUri().getQuery()).defaultOffset(0).build();
         return JPAUtils.queryEntities(em, User.class, queryParameters);
-    }
-
-    public User getUser(String userId) {
-        User user = em.find(User.class, userId);
-        if (user == null) {
-            throw new NotFoundException();
-        }
-        user.setProperties(getProperties(user.getId()));
-        return user;
-    }
-
-    private List<Property> getProperties(String userId) {
-        if (basePath != null) {
-            try {
-                HttpGet request = new HttpGet(basePath + "/v1/properties/filtered?where=ownerId:EQ:" + userId);
-                HttpResponse response = httpClient.execute(request);
-
-                int status = response.getStatusLine().getStatusCode();
-                if (status >= 200 && status < 300) {
-                    HttpEntity entity = response.getEntity();
-                    if (entity != null) {
-                        return getObjects(EntityUtils.toString(entity));
-                    }
-                } else {
-                    String msg = "Remote server '" + basePath + "' has responded with status " + status + ".";
-                    throw new InternalServerErrorException(msg);
-                }
-
-            } catch (IOException e) {
-                String msg = e.getClass().getName() + " occurred: " + e.getMessage();
-                throw new InternalServerErrorException(msg);
-            }
-        } else {
-            // service not available placeholder
-            log.error("base path is null");
-        }
-        return new ArrayList<>();
     }
 
     public User createUser(User user) {
@@ -136,6 +114,54 @@ public class UserDatabase {
             return false;
         }
         return true;
+    }
+
+    public User getUser(String userId) {
+        User user = em.find(User.class, userId);
+        if (user == null) {
+            throw new NotFoundException();
+        }
+        user.setProperties(userDatabase.getProperties(user.getId()));
+        return user;
+    }
+
+    @CircuitBreaker(requestVolumeThreshold = 2)
+    @Fallback(fallbackMethod = "getPropertiesFallback")
+    @Timeout
+    public List<Property> getProperties(String userId) {
+        if (basePath != null) {
+            try {
+                HttpGet request = new HttpGet(basePath + "/v1/properties/filtered?where=ownerId:EQ:" + userId);
+                HttpResponse response = httpClient.execute(request);
+
+                int status = response.getStatusLine().getStatusCode();
+                if (status >= 200 && status < 300) {
+                    HttpEntity entity = response.getEntity();
+                    if (entity != null) {
+                        return getObjects(EntityUtils.toString(entity));
+                    }
+                } else {
+                    String msg = "Remote server '" + basePath + "' has responded with status " + status + ".";
+                    throw new InternalServerErrorException(msg);
+                }
+
+            } catch (IOException e) {
+                String msg = e.getClass().getName() + " occurred: " + e.getMessage();
+                throw new InternalServerErrorException(msg);
+            }
+        } else {
+            // service not available placeholder
+            log.error("base path is null");
+        }
+        return new ArrayList<>();
+    }
+
+    public List<Property> getPropertiesFallback(String userId) {
+        ArrayList<Property> result = new ArrayList<>();
+        Property property = new Property();
+        property.setLocation("N/A");
+        result.add(property);
+        return result;
     }
 
     private void beginTx() {
