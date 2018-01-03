@@ -15,6 +15,7 @@ cache:
 
 script:
 - mvn clean package
+- mvn test
 - docker build -t jm5619/ir-user .
 
 after_success:
