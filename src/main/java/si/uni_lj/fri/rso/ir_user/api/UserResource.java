@@ -55,9 +55,9 @@ public class UserResource {
     @GET
     @Metered
     @Path("/{userId}")
-    public Response getUser(@PathParam("userId") String userId) {
+    public Response getUser(@PathParam("userId") String userId, @DefaultValue("true") @QueryParam("includeExtended") boolean includeExtended) {
         if (ConfigurationUtil.getInstance().getBoolean("rest-config.endpoint-enabled").orElse(false)) {
-            User user = userDatabase.getUser(userId);
+            User user = userDatabase.getUser(userId, includeExtended);
             return user != null
                     ? Response.ok(user).build()
                     : Response.status(Response.Status.NOT_FOUND).build();

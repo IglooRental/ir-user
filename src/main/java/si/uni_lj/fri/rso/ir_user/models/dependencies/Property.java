@@ -1,9 +1,12 @@
 package si.uni_lj.fri.rso.ir_user.models.dependencies;
 
+import java.util.List;
+
 public class Property {
     private String id;
     private String location;
     private String ownerId;
+    private List<Review> reviews;
 
     public Property(String id, String location, String ownerId) {
         this.id = id;
@@ -35,5 +38,13 @@ public class Property {
 
     public void setOwnerId(String ownerId) {
         this.ownerId = ownerId;
+    }
+
+    public List<Review> getReviews() {
+        return reviews;
+    }
+
+    public void setReviews(List<Review> reviews) {
+        this.reviews = reviews;
     }
 }

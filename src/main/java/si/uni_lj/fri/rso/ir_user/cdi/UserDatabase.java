@@ -17,6 +17,7 @@ import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 import si.uni_lj.fri.rso.ir_user.models.User;
 import si.uni_lj.fri.rso.ir_user.models.dependencies.Property;
+import si.uni_lj.fri.rso.ir_user.models.dependencies.Review;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.RequestScoped;
@@ -49,7 +50,11 @@ public class UserDatabase {
     // this also MUST be in a bean (see @requestscoped above) for it to work
     @Inject
     @DiscoverService("property-catalogue-service")
-    private String basePath;
+    private String propertyCatalogueBasePath;
+
+    @Inject
+    @DiscoverService("review-service")
+    private String reviewBasePath;
 
     @PostConstruct
     private void init() {
@@ -57,9 +62,14 @@ public class UserDatabase {
         objectMapper = new ObjectMapper();
     }
 
-    private List<Property> getObjects(String json) throws IOException {
+    private List<Property> getUserObjects(String json) throws IOException {
         return json == null ? new ArrayList<>() : objectMapper.readValue(json,
                 objectMapper.getTypeFactory().constructCollectionType(List.class, Property.class));
+    }
+
+    private List<Review> getReviewObjects(String json) throws IOException {
+        return json == null ? new ArrayList<>() : objectMapper.readValue(json,
+                objectMapper.getTypeFactory().constructCollectionType(List.class, Review.class));
     }
 
     public List<User> getUsers() {
@@ -116,12 +126,15 @@ public class UserDatabase {
         return true;
     }
 
-    public User getUser(String userId) {
+    public User getUser(String userId, boolean includeExtended) {
         User user = em.find(User.class, userId);
         if (user == null) {
             throw new NotFoundException();
         }
-        user.setProperties(userDatabase.getProperties(user.getId()));
+        if (includeExtended) {
+            user.setProperties(userDatabase.getProperties(user.getId()));
+            user.setReviewsSubmitted(userDatabase.getReviews(user.getId()));
+        }
         return user;
     }
 
@@ -129,19 +142,19 @@ public class UserDatabase {
     @Fallback(fallbackMethod = "getPropertiesFallback")
     @Timeout
     public List<Property> getProperties(String userId) {
-        if (basePath != null) {
+        if (propertyCatalogueBasePath != null) {
             try {
-                HttpGet request = new HttpGet(basePath + "/v1/properties/filtered?where=ownerId:EQ:" + userId);
+                HttpGet request = new HttpGet(propertyCatalogueBasePath + "/v1/properties/filtered?where=ownerId:EQ:" + userId);
                 HttpResponse response = httpClient.execute(request);
 
                 int status = response.getStatusLine().getStatusCode();
                 if (status >= 200 && status < 300) {
                     HttpEntity entity = response.getEntity();
                     if (entity != null) {
-                        return getObjects(EntityUtils.toString(entity));
+                        return getUserObjects(EntityUtils.toString(entity));
                     }
                 } else {
-                    String msg = "Remote server '" + basePath + "' has responded with status " + status + ".";
+                    String msg = "Remote server '" + propertyCatalogueBasePath + "' has responded with status " + status + ".";
                     throw new InternalServerErrorException(msg);
                 }
 
@@ -161,6 +174,47 @@ public class UserDatabase {
         Property property = new Property();
         property.setLocation("N/A");
         result.add(property);
+        return result;
+    }
+
+    @CircuitBreaker(requestVolumeThreshold = 2)
+    @Fallback(fallbackMethod = "getReviewsFallback")
+    @Timeout
+    public List<Review> getReviews(String userId) {
+        if (reviewBasePath != null) {
+            try {
+                HttpGet request = new HttpGet(reviewBasePath + "/v1/reviews/filtered?where=userId:EQ:" + userId);
+                HttpResponse response = httpClient.execute(request);
+
+                int status = response.getStatusLine().getStatusCode();
+                if (status >= 200 && status < 300) {
+                    HttpEntity entity = response.getEntity();
+                    if (entity != null) {
+                        return getReviewObjects(EntityUtils.toString(entity));
+                    }
+                } else {
+                    String msg = "Remote server '" + reviewBasePath + "' has responded with status " + status + ".";
+                    throw new InternalServerErrorException(msg);
+                }
+
+            } catch (IOException e) {
+                String msg = e.getClass().getName() + " occurred: " + e.getMessage();
+                throw new InternalServerErrorException(msg);
+            }
+        } else {
+            // service not available placeholder
+            log.error("base path is null");
+        }
+        return new ArrayList<>();
+    }
+
+    public List<Review> getReviewsFallback(String userId) {
+        ArrayList<Review> result = new ArrayList<>();
+        Review review = new Review();
+        review.setHeader("N/A");
+        review.setMessage("N/A");
+        review.setScore(0);
+        result.add(review);
         return result;
     }
 

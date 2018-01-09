@@ -2,6 +2,7 @@ package si.uni_lj.fri.rso.ir_user.models;
 
 import org.eclipse.persistence.annotations.UuidGenerator;
 import si.uni_lj.fri.rso.ir_user.models.dependencies.Property;
+import si.uni_lj.fri.rso.ir_user.models.dependencies.Review;
 
 import javax.persistence.*;
 import java.util.List;
@@ -25,6 +26,9 @@ public class User {
 
     @Transient
     private List<Property> properties;
+
+    @Transient
+    private List<Review> reviewsSubmitted;
 
     public User() {}
 
@@ -73,5 +77,13 @@ public class User {
 
     public void setProperties(List<Property> properties) {
         this.properties = properties;
+    }
+
+    public List<Review> getReviewsSubmitted() {
+        return reviewsSubmitted;
+    }
+
+    public void setReviewsSubmitted(List<Review> reviewsSubmitted) {
+        this.reviewsSubmitted = reviewsSubmitted;
     }
 }
